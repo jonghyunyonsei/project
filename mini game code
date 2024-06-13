@@ -1,0 +1,395 @@
+import tkinter as tk
+from tkinter import messagebox
+import random
+import string
+
+# 숫자야구 게임 클래스
+class NumberBaseballGame:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("숫자 야구 게임")
+        self.computer_number = self.generate_number()
+        self.attempts = 0
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        self.label = tk.Label(self.root, text="숫자를 입력하세요 (네 자리 숫자):")
+        self.label.pack()
+
+        self.entry = tk.Entry(self.root)
+        self.entry.pack()
+
+        self.submit_button = tk.Button(self.root, text="확인", command=self.check_number)
+        self.submit_button.pack()
+
+        self.result_label = tk.Label(self.root, text="")
+        self.result_label.pack()
+
+        self.history_text = tk.Text(self.root, height=10, width=50)
+        self.history_text.pack()
+        self.history_text.insert(tk.END, "입력 기록:\n")
+
+    def generate_number(self):
+        digits = random.sample(range(10), 4)
+        return digits
+
+    def check_number(self):
+        user_input = self.entry.get()
+        if not user_input.isdigit() or len(user_input) != 4:
+            messagebox.showerror("입력 오류", "네 자리 숫자를 입력하세요.")
+            return
+
+        user_number = [int(digit) for digit in user_input]
+        self.attempts += 1
+
+        strikes, balls = self.count_strikes_and_balls(self.computer_number, user_number)
+
+        self.history_text.insert(tk.END, f"{user_input}: {strikes} 스트라이크, {balls} 볼\n")
+
+        if strikes == 4:
+            messagebox.showinfo("축하합니다!", f"{self.attempts}번 만에 숫자를 맞추셨습니다!")
+            self.root.destroy()  # 게임 종료
+        else:
+            self.result_label.config(text=f"{strikes} 스트라이크, {balls} 볼입니다. 다시 시도하세요.")
+            self.entry.delete(0, tk.END)
+
+    def count_strikes_and_balls(self, computer_number, user_number):
+        strikes = sum(1 for i in range(4) if computer_number[i] == user_number[i])
+        balls = sum(1 for digit in user_number if digit in computer_number) - strikes
+        return strikes, balls
+
+# 행맨 게임 클래스
+class HangmanGame:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("행맨 게임")
+        self.word_list = [
+            'python', 'hangman', 'programming', 'openai', 'computer', 'algorithm', 'function', 'variable',
+            'exception', 'keyboard', 'monitor', 'internet', 'software', 'hardware', 'database', 'framework',
+            'library', 'syntax', 'compiler', 'interpreter', 'debugger', 'documentation', 'repository',
+            'application', 'development', 'integration', 'deployment', 'authentication', 'authorization',
+            'encryption', 'decryption', 'performance', 'optimization', 'refactoring', 'virtualization',
+            'container', 'microservices', 'architecture', 'scalability', 'availability', 'reliability',
+            'maintainability', 'usability', 'accessibility', 'responsiveness', 'design', 'testing', 'automation',
+            'configuration', 'management', 'orchestration'
+        ]
+        self.secret_word = random.choice(self.word_list)
+        self.guesses = ''
+        self.max_attempts = 6
+        self.attempts = 0
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        self.label = tk.Label(self.root, text=f"단어를 추측하세요: (단어 길이: {len(self.secret_word)})")
+        self.label.pack()
+
+        self.word_label = tk.Label(self.root, text=self.get_display_word())
+        self.word_label.pack()
+
+        self.entry = tk.Entry(self.root)
+        self.entry.pack()
+
+        self.submit_button = tk.Button(self.root, text="확인", command=self.check_letter)
+        self.submit_button.pack()
+
+        self.result_label = tk.Label(self.root, text="")
+        self.result_label.pack()
+
+        self.attempts_label = tk.Label(self.root, text=f"남은 기회: {self.max_attempts - self.attempts}")
+        self.attempts_label.pack()
+
+    def get_display_word(self):
+        display_word = ''.join([letter if letter in self.guesses else '_' for letter in self.secret_word])
+        return display_word
+
+    def check_letter(self):
+        guess = self.entry.get().lower()
+        self.entry.delete(0, tk.END)
+
+        if len(guess) != 1 or not guess.isalpha():
+            messagebox.showerror("입력 오류", "한 글자를 입력하세요.")
+            return
+
+        if guess in self.guesses:
+            messagebox.showerror("입력 오류", "이미 추측한 글자입니다.")
+            return
+
+        self.guesses += guess
+
+        if guess in self.secret_word:
+            if all(letter in self.guesses for letter in self.secret_word):
+                self.result_label.config(text=f"축하합니다! 단어를 맞추셨습니다: {self.secret_word}")
+                self.submit_button.config(state=tk.DISABLED)
+        else:
+            self.attempts += 1
+            self.attempts_label.config(text=f"남은 기회: {self.max_attempts - self.attempts}")
+            if self.attempts >= self.max_attempts:
+                self.result_label.config(text=f"게임 오버! 단어는 {self.secret_word}였습니다.")
+                self.submit_button.config(state=tk.DISABLED)
+
+        self.word_label.config(text=self.get_display_word())
+
+# 틱택토 게임 클래스 (컴퓨터와 대결)
+class TicTacToeGame:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("틱택토 게임")
+        self.current_player = 'X'
+        self.board = [None] * 9
+        self.buttons = []
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        for i in range(9):
+            button = tk.Button(self.root, text='', font='normal 20 bold', height=3, width=6,
+                               command=lambda i=i: self.make_move(i))
+            button.grid(row=i//3, column=i%3)
+            self.buttons.append(button)
+
+    def make_move(self, index):
+        if self.board[index] is None:
+            self.board[index] = self.current_player
+            self.buttons[index].config(text=self.current_player)
+            if self.check_winner():
+                messagebox.showinfo("게임 종료", f"{self.current_player} 승리!")
+                self.root.destroy()  # 게임 종료
+            elif None not in self.board:
+                messagebox.showinfo("게임 종료", "무승부!")
+                self.root.destroy()  # 게임 종료
+            else:
+                self.current_player = 'O' if self.current_player == 'X' else 'X'
+                if self.current_player == 'O':
+                    self.computer_move()
+
+    def computer_move(self):
+        available_moves = [i for i, x in enumerate(self.board) if x is None]
+        if available_moves:
+            index = random.choice(available_moves)
+            self.board[index] = self.current_player
+            self.buttons[index].config(text=self.current_player)
+            if self.check_winner():
+                messagebox.showinfo("게임 종료", f"{self.current_player} 승리!")
+                self.root.destroy()  # 게임 종료
+            elif None not in self.board:
+                messagebox.showinfo("게임 종료", "무승부!")
+                self.root.destroy()  # 게임 종료
+            else:
+                self.current_player = 'X'
+
+    def check_winner(self):
+        win_conditions = [(0, 1, 2), (3, 4, 5), (6, 7, 8),
+                          (0, 3, 6), (1, 4, 7), (2, 5, 8),
+                          (0, 4, 8), (2, 4, 6)]
+        return any(self.board[a] == self.board[b] == self.board[c] == self.current_player for a, b, c in win_conditions)
+
+# 가위바위보 게임 클래스
+class RockPaperScissorsGame:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("가위바위보 게임")
+        self.user_score = 0
+        self.computer_score = 0
+        self.rounds = 0
+        self.max_rounds = 3
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        self.label = tk.Label(self.root, text="가위바위보를 선택하세요:")
+        self.label.pack()
+
+        self.rock_button = tk.Button(self.root, text="가위", command=lambda: self.play('가위'))
+        self.rock_button.pack()
+
+        self.paper_button = tk.Button(self.root, text="바위", command=lambda: self.play('바위'))
+        self.paper_button.pack()
+
+        self.scissors_button = tk.Button(self.root, text="보", command=lambda: self.play('보'))
+        self.scissors_button.pack()
+
+        self.result_label = tk.Label(self.root, text="")
+        self.result_label.pack()
+
+        self.score_label = tk.Label(self.root, text="사용자: 0, 컴퓨터: 0")
+        self.score_label.pack()
+
+    def play(self, user_choice):
+        computer_choice = random.choice(['가위', '바위', '보'])
+        result = self.determine_winner(user_choice, computer_choice)
+
+        if result == '사용자 승리':
+            self.user_score += 1
+        elif result == '컴퓨터 승리':
+            self.computer_score += 1
+
+        self.rounds += 1
+        self.result_label.config(text=f"사용자: {user_choice}, 컴퓨터: {computer_choice} -> {result}")
+        self.score_label.config(text=f"사용자: {self.user_score}, 컴퓨터: {self.computer_score}")
+
+        if self.rounds >= self.max_rounds:
+            if self.user_score > self.computer_score:
+                final_result = "사용자가 이겼습니다!"
+            elif self.user_score < self.computer_score:
+                final_result = "컴퓨터가 이겼습니다!"
+            else:
+                final_result = "무승부입니다!"
+
+            messagebox.showinfo("게임 종료", final_result)
+            self.root.destroy()  # 게임 종료
+
+    def determine_winner(self, user, computer):
+        if user == computer:
+            return "무승부"
+        elif (user == '가위' and computer == '보') or \
+             (user == '바위' and computer == '가위') or \
+             (user == '보' and computer == '바위'):
+            return "사용자 승리"
+        else:
+            return "컴퓨터 승리"
+
+# 숫자 추측 게임 클래스
+class NumberGuessingGame:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("숫자 추측 게임")
+        self.secret_number = random.randint(1, 100)
+        self.attempts = 0
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        self.label = tk.Label(self.root, text="1부터 100 사이의 숫자를 맞추세요:")
+        self.label.pack()
+
+        self.entry = tk.Entry(self.root)
+        self.entry.pack()
+
+        self.submit_button = tk.Button(self.root, text="확인", command=self.check_number)
+        self.submit_button.pack()
+
+        self.result_label = tk.Label(self.root, text="")
+        self.result_label.pack()
+
+    def check_number(self):
+        user_input = self.entry.get()
+        if not user_input.isdigit():
+            messagebox.showerror("입력 오류", "숫자를 입력하세요.")
+            return
+
+        user_number = int(user_input)
+        self.attempts += 1
+
+        if user_number < self.secret_number:
+            self.result_label.config(text="더 큰 숫자입니다. 다시 시도하세요.")
+        elif user_number > self.secret_number:
+            self.result_label.config(text="더 작은 숫자입니다. 다시 시도하세요.")
+        else:
+            messagebox.showinfo("축하합니다!", f"{self.attempts}번 만에 숫자를 맞추셨습니다!")
+            self.root.destroy()  # 게임 종료
+
+# 메모리 게임 클래스
+class MemoryGame:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("메모리 게임")
+        self.buttons = []
+        self.cards = list(string.ascii_uppercase[:15]) * 2
+        random.shuffle(self.cards)
+        self.flipped_cards = []
+        self.matched_cards = []
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        for i in range(5):
+            row = []
+            for j in range(6):
+                button = tk.Button(self.root, text='', font='normal 20 bold', height=3, width=6,
+                                   command=lambda i=i, j=j: self.flip_card(i, j))
+                button.grid(row=i, column=j)
+                row.append(button)
+            self.buttons.append(row)
+
+    def flip_card(self, i, j):
+        if len(self.flipped_cards) < 2 and self.buttons[i][j]['text'] == '':
+            self.buttons[i][j].config(text=self.cards[i * 6 + j])
+            self.flipped_cards.append((i, j))
+            if len(self.flipped_cards) == 2:
+                self.root.after(1000, self.check_match)
+
+    def check_match(self):
+        i1, j1 = self.flipped_cards[0]
+        i2, j2 = self.flipped_cards[1]
+        if self.cards[i1 * 6 + j1] == self.cards[i2 * 6 + j2]:
+            self.matched_cards.append(self.flipped_cards[0])
+            self.matched_cards.append(self.flipped_cards[1])
+        else:
+            self.buttons[i1][j1].config(text='')
+            self.buttons[i2][j2].config(text='')
+        self.flipped_cards = []
+        if len(self.matched_cards) == 30:
+            messagebox.showinfo("축하합니다!", "모든 카드를 맞추셨습니다!")
+            self.root.destroy()  # 게임 종료
+
+# 메인 메뉴 클래스
+class MainMenu:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("수학과 프로그래밍 기말과제")
+
+        self.title_label = tk.Label(self.root, text="수학과 프로그래밍 기말과제", font=("Arial", 16))
+        self.title_label.pack()
+
+        self.subtitle_label = tk.Label(self.root, text="게임을 선택하세요.")
+        self.subtitle_label.pack()
+
+        self.author_label = tk.Label(self.root, text="제작자 : 2018131046 홍종현")
+        self.author_label.pack()
+
+        self.number_baseball_button = tk.Button(self.root, text="숫자 야구", command=self.start_number_baseball)
+        self.number_baseball_button.pack()
+
+        self.hangman_button = tk.Button(self.root, text="행맨", command=self.start_hangman)
+        self.hangman_button.pack()
+
+        self.tictactoe_button = tk.Button(self.root, text="틱택토", command=self.start_tictactoe)
+        self.tictactoe_button.pack()
+
+        self.rockpaperscissors_button = tk.Button(self.root, text="가위바위보", command=self.start_rockpaperscissors)
+        self.rockpaperscissors_button.pack()
+
+        self.number_guessing_button = tk.Button(self.root, text="숫자 추측 게임", command=self.start_number_guessing)
+        self.number_guessing_button.pack()
+
+        self.memory_game_button = tk.Button(self.root, text="메모리 게임", command=self.start_memory_game)
+        self.memory_game_button.pack()
+
+    def start_number_baseball(self):
+        self.new_window(NumberBaseballGame)
+
+    def start_hangman(self):
+        self.new_window(HangmanGame)
+
+    def start_tictactoe(self):
+        self.new_window(TicTacToeGame)
+
+    def start_rockpaperscissors(self):
+        self.new_window(RockPaperScissorsGame)
+
+    def start_number_guessing(self):
+        self.new_window(NumberGuessingGame)
+
+    def start_memory_game(self):
+        self.new_window(MemoryGame)
+
+    def new_window(self, game_class):
+        new_root = tk.Toplevel(self.root)
+        game_class(new_root)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    main_menu = MainMenu(root)
+    root.mainloop()
